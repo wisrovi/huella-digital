@@ -1,0 +1,72 @@
+{
+  "case_id": "caso_03_delito_propiedad_intelectual",
+  "title": "Audiencia: Fuga de Código Fuente y Propiedad Intelectual",
+  "description": "Interrogatorio judicial sobre exfiltración mediante repositorios git privados y verificación de commits firmados con GPG.",
+  "scenario_type": "audiencia",
+  "difficulty": "avanzado",
+  "characters": [
+    {
+      "id": "81eba174-69b0-44ad-b346-c60a13e1bfa0",
+      "name": "Ilmo. Magistrado D. Ricardo Peña",
+      "role": "juez",
+      "personality": "Severo, no tolera explicaciones vagas.",
+      "objectives": [
+        "Dirigir la vista oral"
+      ],
+      "knowledge_access": [
+        "general",
+        "ley"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    },
+    {
+      "id": "83f2f7e2-96df-4966-a681-d92c28862c07",
+      "name": "Fiscal D. Andrés Calvo",
+      "role": "fiscal",
+      "personality": "Centrado en el cotejo de firmas criptográficas.",
+      "objectives": [
+        "Probar autoría del commit"
+      ],
+      "knowledge_access": [
+        "informe_pericial"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    }
+  ],
+  "knowledge_base": [
+    {
+      "id": "412433ff-5697-40ac-9041-5cbfabef0d86",
+      "title": "Log de Servidor Git y Claves GPG",
+      "category": "informe_pericial",
+      "content": "El commit fe41a2 fue firmado con la clave privada asociada al correo del extrabajador.",
+      "tags": [
+        "informe_pericial",
+        "evidencia"
+      ],
+      "created_at": "2026-10-02T16:30:33.314903"
+    }
+  ],
+  "evaluation_criteria": [
+    {
+      "id": "ind_gpg",
+      "name": "Verificación de Firmas Criptográficas",
+      "category": "rigor_tecnico",
+      "description": "Acredita el cotejo de llaves públicas GPG.",
+      "weight": 1.0,
+      "expected_keywords": [
+        "gpg",
+        "clave privada",
+        "firma digital"
+      ],
+      "penalized_keywords": [
+        "no sé"
+      ]
+    }
+  ],
+  "max_turns": 5,
+  "case_context": {}
+}

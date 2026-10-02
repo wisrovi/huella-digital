@@ -1,0 +1,18 @@
+services:
+  huella-forense-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: huella_forense_simulator_app
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
+    volumes:
+      - chroma_data:/app/data/chroma_db
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local

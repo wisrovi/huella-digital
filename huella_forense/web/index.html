@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huella Forense - Plataforma de Entrenamiento y Simulación Virtual</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #0b1120; color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; }
+        .card { background-color: #1e293b; border-color: #334155; color: #f8fafc; }
+        .nav-tabs .nav-link { color: #94a3b8; border: none; font-weight: 500; }
+        .nav-tabs .nav-link.active { color: #38bdf8; background-color: #1e293b; border-bottom: 3px solid #38bdf8; font-weight: bold; }
+        .chat-container { height: 420px; overflow-y: auto; background-color: #070c18; border-radius: 8px; padding: 15px; border: 1px solid #334155; }
+        .msg-bubble { margin-bottom: 12px; padding: 12px 16px; border-radius: 8px; max-width: 88%; line-height: 1.5; }
+        .msg-juez { background-color: #1e3a5f; border-left: 4px solid #38bdf8; }
+        .msg-fiscal { background-color: #451a03; border-left: 4px solid #f97316; }
+        .msg-abogado_defensa { background-color: #3b0764; border-left: 4px solid #c084fc; }
+        .msg-abogado_acusacion { background-color: #581c87; border-left: 4px solid #e879f9; }
+        .msg-cliente_director { background-color: #0c4a6e; border-left: 4px solid #0ea5e9; }
+        .msg-cliente_tecnico { background-color: #134e4a; border-left: 4px solid #14b8a6; }
+        .msg-estudiante { background-color: #064e3b; border-left: 4px solid #34d399; margin-left: auto; }
+        .msg-moderador { background-color: #27272a; border-left: 4px solid #a1a1aa; font-style: italic; }
+        .dummy-avatar { width: 44px; height: 44px; background-color: #475569; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+        .tab-content { padding-top: 15px; }
+        .pre-scrollable-custom { max-height: 250px; overflow-y: auto; }
+    </style>
+</head>
+<body class="p-2 p-md-3">
+    <div class="container-fluid">
+        <!-- Barra Superior Institucional -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary">
+            <div>
+                <h3 class="mb-0 text-info fw-bold"><i class="bi bi-shield-check"></i> Huella Forense</h3>
+                <small class="text-secondary">Plataforma de Simulación Virtual con IA para Entrenamiento Pericial Judicial y Corporativo</small>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <span class="badge bg-success p-2"><i class="bi bi-cpu"></i> Backend Online</span>
+                <span class="badge bg-primary p-2"><i class="bi bi-database"></i> SQLite WAL + BM25</span>
+                <span class="badge bg-info p-2 text-dark"><i class="bi bi-robot"></i> RAG Forense Híbrido</span>
+            </div>
+        </div>
+
+        <!-- Pestañas Principales del Sistema -->
+        <ul class="nav nav-tabs border-secondary mb-3" id="mainTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="sim-tab" data-bs-toggle="tab" data-bs-target="#simPane" type="button">
+                    <i class="bi bi-play-circle-fill"></i> 1. Sala Virtual de Entrenamiento
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="cases-tab" data-bs-toggle="tab" data-bs-target="#casesPane" type="button" onclick="loadCaseManagement()">
+                    <i class="bi bi-folder-plus"></i> 2. Gestor de Casos & Base de Conocimiento (Docentes)
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="estimation-tab" data-bs-toggle="tab" data-bs-target="#estimationPane" type="button" onclick="loadEstimation()">
+                    <i class="bi bi-calculator-fill"></i> 3. Estimación Técnica de Horas I+D/IA (14 Bloques)
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="commercial-tab" data-bs-toggle="tab" data-bs-target="#commercialPane" type="button">
+                    <i class="bi bi-briefcase-fill"></i> 4. Modelo de Colaboración & Comercialización
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabsContent">
+            <!-- PESTAÑA 1: SALA VIRTUAL DE ENTRENAMIENTO -->
+            <div class="tab-pane fade show active" id="simPane" role="tabpanel">
+                <div class="row g-3">
+                    <!-- Configuración del Caso y Personajes -->
+                    <div class="col-lg-4">
+                        <div class="card mb-3 shadow-sm">
+                            <div class="card-header bg-dark border-secondary text-info fw-bold">
+                                <i class="bi bi-sliders"></i> Configuración de la Experiencia
+                            </div>
+                            <div class="card-body">
+                                <label class="form-label text-secondary small fw-bold">Seleccionar Caso Formativo:</label>
+                                <select id="caseSelector" class="form-select bg-dark text-light border-secondary mb-2" onchange="onCaseChanged()">
+                                    <!-- Cargado dinámicamente -->
+                                </select>
+
+                                <div class="mb-2">
+                                    <label class="form-label text-secondary small fw-bold">Nombre del Perito Estudiante:</label>
+                                    <input type="text" id="studentNameInput" class="form-control bg-dark text-light border-secondary" value="Dña. Perito Colegiada">
+                                </div>
+
+                                <div class="p-2 mb-3 bg-dark rounded border border-secondary small" id="caseSummaryBox">
+                                    <div class="text-secondary">Cargando detalles del caso...</div>
+                                </div>
+
+                                <button id="btnStartSession" class="btn btn-primary w-100 fw-bold" onclick="startSession()">
+                                    <i class="bi bi-play-circle"></i> Iniciar Comparecencia Pericial
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Panel de Personajes y Roles -->
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-dark border-secondary text-warning fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-people-fill"></i> Personajes en Sala</span>
+                                <span class="badge bg-secondary" id="charCountBadge">0</span>
+                            </div>
+                            <div class="card-body p-2" id="charactersList">
+                                <!-- Poblado dinámicamente según el caso -->
+                            </div>
+                        </div>
+
+                        <!-- Evidencia pericial y documentos del caso (RAG) -->
+                        <div class="card shadow-sm mt-3">
+                            <div class="card-header bg-dark border-secondary text-light fw-bold">
+                                <i class="bi bi-file-earmark-lock"></i> Base Documental del Caso (RAG)
+                            </div>
+                            <div class="card-body p-2 pre-scrollable-custom" id="knowledgeList">
+                                <small class="text-secondary">Seleccione un caso para ver los folios probatorios...</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Central: Chat de Interrogatorio Pericial -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                                <span id="sessionStatusHeader" class="fw-bold text-light">
+                                    <i class="bi bi-mic-fill text-danger"></i> Sala de Vistas - Interrogatorio en Directo
+                                </span>
+                                <span id="turnCounterBadge" class="badge bg-secondary">Turno 0 / 6</span>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div id="chatBox" class="chat-container mb-3 flex-grow-1">
+                                    <div class="text-center text-muted py-5">
+                                        <i class="bi bi-shield-shaded fs-1 d-block mb-3 text-secondary"></i>
+                                        <h5>Plataforma Preparada para la Simulación</h5>
+                                        <p class="small text-secondary mb-0">Haga clic en <strong>'Iniciar Comparecencia Pericial'</strong> para que la sala o reunión dé comienzo.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Formulario de Intervención -->
+                                <div class="input-group">
+                                    <input id="studentInput" type="text" class="form-control bg-dark text-light border-secondary" 
+                                        placeholder="Escriba su declaración técnica pericial (ej. hashes, bloqueador Tableau, cadena custodia, UTC)..." 
+                                        onkeydown="if(event.key==='Enter') submitTurn()">
+                                    <button id="btnSendTurn" class="btn btn-success fw-bold px-4" onclick="submitTurn()">
+                                        <i class="bi bi-send-fill"></i> Declarar
+                                    </button>
+                                    <button id="btnFinish" class="btn btn-warning fw-bold ms-1" onclick="evaluateSession()">
+                                        <i class="bi bi-award-fill"></i> Evaluar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporte de Valoración y Feedback del Estudiante -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div id="evalCard" class="card shadow-sm border-info" style="display: none;">
+                            <div class="card-header bg-dark border-info text-info fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-award-fill"></i> Dictamen de Valoración y Feedback del Estudiante (Sistema Rúbrica Huella Forense)</span>
+                                <span id="evalScoreBadge" class="badge bg-success fs-6">Nota: 0 / 100</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <h6 class="text-secondary fw-bold"><i class="bi bi-bar-chart-fill"></i> Desglose por Competencia:</h6>
+                                        <div id="categoryScoresList"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Fortalezas Identificadas:</h6>
+                                        <ul id="strengthsList" class="small ps-3 text-light"></ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Recomendaciones Docentes:</h6>
+                                        <ul id="recommendationsList" class="small ps-3 text-light"></ul>
+                                    </div>
+                                </div>
+                                <div class="mt-3 p-3 bg-dark rounded border border-secondary">
+                                    <strong class="text-light">Juicio Cualitativo del Tribunal:</strong>
+                                    <p id="qualitativeText" class="mb-0 text-secondary mt-1"></p>
+                                </div>
+                                <div class="mt-3">
+                                    <h6 class="text-secondary fw-bold"><i class="bi bi-list-check"></i> Análisis Turno a Turno del Peritaje:</h6>
+                                    <div id="turnAnalysisTable" class="table-responsive"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 2: GESTOR DE CASOS (DOCENTES) -->
+            <div class="tab-pane fade" id="casesPane" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-dark border-secondary text-info fw-bold">
+                                <i class="bi bi-folder-check"></i> Casos Activos en la Plataforma
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group" id="casesManagementList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-dark border-secondary text-success fw-bold">
+                                <i class="bi bi-file-earmark-plus"></i> Incorporación Progresiva de Nuevo Caso (JSON)
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-secondary">
+                                    Huella Forense puede incorporar nuevos escenarios, personajes, documentos probatorios e indicadores de evaluación sin necesidad de desarrollar nuevamente la plataforma.
+                                </p>
+                                <textarea id="newCaseJson" class="form-control bg-dark text-light border-secondary font-monospace small mb-3" rows="14"></textarea>
+                                <button class="btn btn-success fw-bold" onclick="saveNewCase()">
+                                    <i class="bi bi-cloud-arrow-up"></i> Guardar y Desplegar Caso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 3: ESTIMACIÓN TÉCNICA DE HORAS I+D/IA (14 BLOQUES) -->
+            <div class="tab-pane fade" id="estimationPane" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark border-secondary text-warning fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock-history"></i> Desglose Técnico de Horas por Bloque de Trabajo (I+D/IA)</span>
+                        <span class="badge bg-primary" id="totalHoursHeader">Cargando...</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover table-bordered small align-middle">
+                                <thead class="table-secondary text-dark">
+                                    <tr>
+                                        <th style="width: 50px;">Bloque</th>
+                                        <th>Tarea Solicitada en el Pliego de Requisitos</th>
+                                        <th style="width: 110px;" class="text-center">Rango Horas</th>
+                                        <th>Entregable Técnico Principal</th>
+                                        <th>Dependencias Clave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="estimationTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <div class="card bg-dark border-secondary">
+                                    <div class="card-header text-info fw-bold"><i class="bi bi-link-45deg"></i> Dependencias Requeridas de Huella Forense</div>
+                                    <div class="card-body p-2">
+                                        <ul id="depList" class="small mb-0 ps-3 text-secondary"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-dark border-secondary">
+                                    <div class="card-header text-danger fw-bold"><i class="bi bi-shield-exclamation"></i> Riesgos Técnicos & Mitigaciones</div>
+                                    <div class="card-body p-2">
+                                        <ul id="riskList" class="small mb-0 ps-3 text-secondary"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 4: MODELO DE COMERCIALIZACIÓN & COLABORACIÓN -->
+            <div class="tab-pane fade" id="commercialPane" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark border-secondary text-info fw-bold">
+                        <i class="bi bi-graph-up-arrow"></i> Modelo de Comercialización Conjunto (Punto 8 del Documento de Requisitos)
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h5 class="text-light"><i class="bi bi-bullseye text-warning"></i> Público Objetivo Identificado</h5>
+                                <ul class="text-secondary small">
+                                    <li><strong>Estudiantes de Máster y Grado en Ciberseguridad / Informática Forense:</strong> Práctica intensiva antes de la defensa del TFM o peritaje judicial real.</li>
+                                    <li><strong>Peritos Judiciales en Ejercicio:</strong> Entrenamiento continuo ante objeciones agresivas de letrados y fiscales en sedes de la Audiencia Nacional o Juzgados de Instrucción.</li>
+                                    <li><strong>Auditores y Consultores de Incidentes (DFIR):</strong> Capacitación en comunicación ejecutiva frente a Comités de Dirección y CISOs tras incidentes de ransomware.</li>
+                                </ul>
+
+                                <h5 class="text-light mt-4"><i class="bi bi-cash-stack text-success"></i> Modalidades de Explotación Comercial</h5>
+                                <ul class="text-secondary small">
+                                    <li><strong>Suscripción Académica (SaaS B2B):</strong> Licenciamiento para universidades, academias e institutos de peritaje informático con panel de seguimiento docente.</li>
+                                    <li><strong>Bonos de Simulación Individual (B2C):</strong> Paquetes de 5, 10 o 20 simulaciones con evaluación automatizada y emisión de certificado pericial.</li>
+                                    <li><strong>Casos Custom / Enterprise:</strong> Desarrollo a medida de escenarios periciales confidenciales para despachos jurídicos y aseguradoras.</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-dark rounded border border-secondary">
+                                    <h6 class="text-info fw-bold"><i class="bi bi-calendar-check"></i> Hoja de Ruta de Próximos Pasos (Punto 12)</h6>
+                                    <ol class="small text-secondary mb-0">
+                                        <li class="mb-2"><strong>Revisión del documento y requisitos por parte de I+D/IA:</strong> <span class="badge bg-success">Completado</span></li>
+                                        <li class="mb-2"><strong>Estimación preliminar de horas y esfuerzo:</strong> <span class="badge bg-success">Completado (420-645h)</span></li>
+                                        <li class="mb-2"><strong>Identificación de dudas o requisitos pendientes:</strong> <span class="badge bg-success">Documentado</span></li>
+                                        <li class="mb-2"><strong>Solicitud y recepción de guiones, contenidos y criterios:</strong> En espera de remesa adicional de Huella Forense.</li>
+                                        <li class="mb-2"><strong>Definición del alcance MVP:</strong> Arquitectura actual desplegada y validada.</li>
+                                        <li class="mb-2"><strong>Validación de la primera versión con Huella Forense:</strong> Lista para presentación y feedback.</li>
+                                        <li><strong>Planificación de futuras ampliaciones:</strong> Integración de avatares 3D interactivos y síntesis de voz (TTS/STT).</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentSessionId = null;
+        let currentCase = null;
+        let currentTurn = 0;
+        let maxTurns = 6;
+        let casesData = [];
+
+        // Inicializar al cargar la página
+        window.addEventListener("DOMContentLoaded", async () => {
+            await loadCases();
+        });
+
+        async function loadCases() {
+            try {
+                const res = await fetch("/cases");
+                casesData = await res.json();
+                const selector = document.getElementById("caseSelector");
+                selector.innerHTML = "";
+                casesData.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.case_id;
+                    opt.textContent = `${c.scenario_type === 'audiencia' ? '🏛️ Audiencia' : '💼 Reunión'}: ${c.title}`;
+                    selector.appendChild(opt);
+                });
+                await onCaseChanged();
+            } catch (err) {
+                console.error("Error cargando casos:", err);
+            }
+        }
+
+        async function onCaseChanged() {
+            const caseId = document.getElementById("caseSelector").value;
+            const res = await fetch(`/cases/${caseId}`);
+            currentCase = await res.json();
+
+            // Actualizar resumen
+            document.getElementById("caseSummaryBox").innerHTML = `
+                <div class="fw-bold text-light">${currentCase.title}</div>
+                <div class="text-secondary mt-1">${currentCase.description}</div>
+                <div class="mt-2 d-flex gap-2">
+                    <span class="badge bg-secondary text-uppercase">${currentCase.scenario_type}</span>
+                    <span class="badge bg-info text-dark">Dificultad: ${currentCase.difficulty}</span>
+                    <span class="badge bg-dark border border-secondary">Máx Turnos: ${currentCase.max_turns}</span>
+                </div>
+            `;
+
+            // Actualizar lista de personajes
+            const charList = document.getElementById("charactersList");
+            charList.innerHTML = "";
+            document.getElementById("charCountBadge").textContent = currentCase.characters.length;
+
+            currentCase.characters.forEach(char => {
+                let icon = "bi-person-badge";
+                let badgeClass = "text-info";
+                if (char.role === "juez") { icon = "bi-bank"; badgeClass = "text-info"; }
+                else if (char.role === "fiscal") { icon = "bi-person-fill-exclamation"; badgeClass = "text-warning"; }
+                else if (char.role.includes("abogado")) { icon = "bi-briefcase-fill"; badgeClass = "text-purple"; }
+                else if (char.role === "persona_juzgada") { icon = "bi-person-slash"; badgeClass = "text-muted"; }
+                else if (char.role.includes("cliente")) { icon = "bi-building-fill"; badgeClass = "text-primary"; }
+
+                const isPassive = !char.is_active_speaker;
+                charList.innerHTML += `
+                    <div class="d-flex align-items-center p-2 mb-2 bg-dark rounded border border-secondary ${isPassive ? 'opacity-75' : ''}">
+                        <div class="me-2 fs-3 ${badgeClass}"><i class="bi ${icon}"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold ${isPassive ? 'text-muted' : 'text-light'}">${char.name}</div>
+                            <small class="text-secondary">${char.personality.substring(0, 70)}...</small>
+                        </div>
+                        ${isPassive ? '<span class="badge bg-dark border border-secondary text-secondary">Monigote Gris</span>' : ''}
+                    </div>
+                `;
+            });
+
+            // Actualizar documentos RAG
+            const kList = document.getElementById("knowledgeList");
+            if (currentCase.knowledge_base && currentCase.knowledge_base.length > 0) {
+                kList.innerHTML = currentCase.knowledge_base.map(doc => `
+                    <div class="p-2 mb-2 bg-dark rounded border border-secondary small">
+                        <div class="fw-bold text-info"><i class="bi bi-file-text"></i> ${doc.title}</div>
+                        <div class="text-secondary mt-1">${doc.content.substring(0, 110)}...</div>
+                        <div class="mt-1">${doc.tags.map(t => `<span class="badge bg-secondary me-1" style="font-size:0.7rem;">${t}</span>`).join('')}</div>
+                    </div>
+                `).join('');
+            } else {
+                kList.innerHTML = '<small class="text-secondary">Sin documentos anexos.</small>';
+            }
+        }
+
+        async function startSession() {
+            const caseId = document.getElementById("caseSelector").value;
+            const studentName = document.getElementById("studentNameInput").value.trim() || "Perito Forense";
+
+            const res = await fetch("/sessions/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ case_id: caseId, student_id: "student_web_01", student_name: studentName })
+            });
+            const data = await res.json();
+            currentSessionId = data.session_id;
+            currentTurn = 0;
+            maxTurns = currentCase ? currentCase.max_turns : 6;
+
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = "";
+            data.opening_messages.forEach(m => appendMessage(m.speaker_name, m.speaker_role, m.content));
+            document.getElementById("turnCounterBadge").textContent = `Turno 1 / ${maxTurns}`;
+            document.getElementById("evalCard").style.display = "none";
+        }
+
+        async function submitTurn() {
+            if (!currentSessionId) {
+                alert("Primero inicie una comparecencia pericial.");
+                return;
+            }
+            const input = document.getElementById("studentInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage("Usted (Perito Forense)", "estudiante", text);
+            input.value = "";
+
+            const res = await fetch(`/sessions/${currentSessionId}/turn`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ student_input: text })
+            });
+            const data = await res.json();
+            currentTurn = data.current_turn;
+            document.getElementById("turnCounterBadge").textContent = `Turno ${currentTurn} / ${data.max_turns}`;
+
+            data.character_responses.forEach(r => appendMessage(r.speaker_name, r.speaker_role, r.content));
+
+            if (data.is_completed) {
+                evaluateSession();
+            }
+        }
+
+        async function evaluateSession() {
+            if (!currentSessionId) return;
+            const res = await fetch(`/sessions/${currentSessionId}/evaluate`);
+            const report = await res.json();
+
+            document.getElementById("evalCard").style.display = "block";
+            const scoreBadge = document.getElementById("evalScoreBadge");
+            scoreBadge.textContent = `Calificación Global: ${report.global_score} / 100`;
+            scoreBadge.className = `badge fs-6 ${report.global_score >= 70 ? 'bg-success' : 'bg-warning'}`;
+
+            document.getElementById("qualitativeText").textContent = report.qualitative_feedback;
+
+            // Desglose por categoría
+            const catList = document.getElementById("categoryScoresList");
+            catList.innerHTML = "";
+            for (const [k, v] of Object.entries(report.category_scores)) {
+                catList.innerHTML += `
+                    <div class="d-flex justify-content-between border-bottom border-secondary py-1 small">
+                        <span class="text-capitalize text-light">${k.replace(/_/g, ' ')}:</span>
+                        <strong class="${v >= 70 ? 'text-success' : 'text-warning'}">${v}/100</strong>
+                    </div>`;
+            }
+
+            // Fortalezas
+            const strList = document.getElementById("strengthsList");
+            strList.innerHTML = report.identified_strengths.length > 0
+                ? report.identified_strengths.map(s => `<li>${s}</li>`).join("")
+                : '<li class="text-secondary">Sin fortalezas destacadas registradas.</li>';
+
+            // Recomendaciones
+            const recList = document.getElementById("recommendationsList");
+            recList.innerHTML = report.actionable_recommendations.map(r => `<li>${r}</li>`).join("");
+
+            // Análisis Turno a Turno
+            const turnTable = document.getElementById("turnAnalysisTable");
+            if (report.turn_by_turn_analysis && report.turn_by_turn_analysis.length > 0) {
+                turnTable.innerHTML = `
+                    <table class="table table-dark table-sm table-bordered small">
+                        <thead>
+                            <tr class="table-secondary text-dark">
+                                <th style="width: 70px;">Turno</th>
+                                <th style="width: 90px;">Puntaje</th>
+                                <th>Aciertos Técnicos</th>
+                                <th>Áreas de Mejora Detectadas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${report.turn_by_turn_analysis.map(t => `
+                                <tr>
+                                    <td class="text-center fw-bold">#${t.turn_index}</td>
+                                    <td class="fw-bold ${t.score >= 70 ? 'text-success' : 'text-warning'}">${t.score} / 100</td>
+                                    <td>${t.strengths.join(", ") || '<span class="text-secondary">-</span>'}</td>
+                                    <td>${t.areas_to_improve.join(", ") || '<span class="text-secondary">-</span>'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                turnTable.innerHTML = '<small class="text-secondary">Sin turnos analizados.</small>';
+            }
+
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function appendMessage(speaker, role, content) {
+            const chatBox = document.getElementById("chatBox");
+            let roleClass = "msg-juez";
+            let icon = "bi-bank";
+            if (role === "fiscal") { roleClass = "msg-fiscal"; icon = "bi-person-fill-exclamation"; }
+            else if (role === "abogado_defensa") { roleClass = "msg-abogado_defensa"; icon = "bi-briefcase-fill"; }
+            else if (role === "abogado_acusacion") { roleClass = "msg-abogado_acusacion"; icon = "bi-shield-shaded"; }
+            else if (role === "cliente_director") { roleClass = "msg-cliente_director"; icon = "bi-person-badge-fill"; }
+            else if (role === "cliente_tecnico") { roleClass = "msg-cliente_tecnico"; icon = "bi-terminal-fill"; }
+            else if (role === "estudiante") { roleClass = "msg-estudiante"; icon = "bi-person-check-fill"; }
+            else if (role === "moderador") { roleClass = "msg-moderador"; icon = "bi-bell-fill"; }
+
+            const div = document.createElement("div");
+            div.className = `msg-bubble ${roleClass}`;
+            div.innerHTML = `<div class="fw-bold small mb-1"><i class="bi ${icon}"></i> ${speaker} (${role.toUpperCase()}):</div><div>${content}</div>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Pestaña 2: Carga y Gestión de Casos
+        async function loadCaseManagement() {
+            const res = await fetch("/cases");
+            const cases = await res.json();
+            const list = document.getElementById("casesManagementList");
+            list.innerHTML = cases.map(c => `
+                <div class="list-group-item bg-dark border-secondary text-light d-flex justify-content-between align-items-center mb-2 rounded">
+                    <div>
+                        <h6 class="mb-1 text-info">${c.title}</h6>
+                        <small class="text-secondary">ID: <code>${c.case_id}</code> | Tipo: <strong>${c.scenario_type}</strong> | Dificultad: ${c.difficulty}</small>
+                    </div>
+                    <span class="badge bg-secondary">${c.characters_count} Personajes</span>
+                </div>
+            `).join('');
+
+            // Cargar plantilla en el textarea
+            const sampleNewCase = {
+                case_id: "caso_03_delito_propiedad_intelectual",
+                title: "Audiencia: Fuga de Código Fuente y Propiedad Intelectual",
+                description: "Interrogatorio judicial sobre exfiltración mediante repositorios git privados y verificación de commits firmados con GPG.",
+                scenario_type: "audiencia",
+                difficulty: "avanzado",
+                max_turns: 5,
+                characters: [
+                    {
+                        name: "Ilmo. Magistrado D. Ricardo Peña",
+                        role: "juez",
+                        personality: "Severo, no tolera explicaciones vagas.",
+                        objectives: ["Dirigir la vista oral"],
+                        knowledge_access: ["general", "ley"],
+                        is_active_speaker: true
+                    },
+                    {
+                        name: "Fiscal D. Andrés Calvo",
+                        role: "fiscal",
+                        personality: "Centrado en el cotejo de firmas criptográficas.",
+                        objectives: ["Probar autoría del commit"],
+                        knowledge_access: ["informe_pericial"],
+                        is_active_speaker: true
+                    }
+                ],
+                knowledge_base: [
+                    {
+                        title: "Log de Servidor Git y Claves GPG",
+                        category: "informe_pericial",
+                        content: "El commit fe41a2 fue firmado con la clave privada asociada al correo del extrabajador.",
+                        tags: ["informe_pericial", "evidencia"]
+                    }
+                ],
+                evaluation_criteria: [
+                    {
+                        id: "ind_gpg",
+                        name: "Verificación de Firmas Criptográficas",
+                        category: "rigor_tecnico",
+                        description: "Acredita el cotejo de llaves públicas GPG.",
+                        expected_keywords: ["gpg", "clave privada", "firma digital"],
+                        penalized_keywords: ["no sé"]
+                    }
+                ]
+            };
+            document.getElementById("newCaseJson").value = JSON.stringify(sampleNewCase, null, 2);
+        }
+
+        async function saveNewCase() {
+            try {
+                const text = document.getElementById("newCaseJson").value;
+                const caseObj = JSON.parse(text);
+                const res = await fetch("/cases", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(caseObj)
+                });
+                const data = await res.json();
+                alert(`✅ ${data.message} (${data.case_id})`);
+                await loadCases();
+                await loadCaseManagement();
+            } catch (err) {
+                alert("❌ Error de formato JSON o validación: " + err.message);
+            }
+        }
+
+        // Pestaña 3: Carga de Estimación Técnica de Horas (14 Bloques)
+        async function loadEstimation() {
+            try {
+                const res = await fetch("/estimation");
+                const data = await res.json();
+
+                document.getElementById("totalHoursHeader").textContent = `Total: ${data.total_hours_min} - ${data.total_hours_max} Horas (${data.mvp_timeline_weeks} Semanas)`;
+
+                const tbody = document.getElementById("estimationTableBody");
+                tbody.innerHTML = data.work_packages.map(p => `
+                    <tr>
+                        <td class="text-center fw-bold text-info">B${p.id}</td>
+                        <td class="fw-bold text-light">${p.name}</td>
+                        <td class="text-center text-success fw-bold">${p.hours_min} - ${p.hours_max} h</td>
+                        <td class="text-secondary">${p.deliverables}</td>
+                        <td class="text-secondary"><small>${p.dependencies.join(", ")}</small></td>
+                    </tr>
+                `).join('');
+
+                // Dependencias
+                const dList = document.getElementById("depList");
+                dList.innerHTML = data.critical_dependencies.map(d => `<li class="mb-1">${d}</li>`).join('');
+
+                // Riesgos
+                const rList = document.getElementById("riskList");
+                rList.innerHTML = data.technical_risks.map(r => `<li class="mb-1">${r}</li>`).join('');
+            } catch (err) {
+                console.error("Error al cargar la estimación:", err);
+            }
+        }
+    </script>
+</body>
+</html>

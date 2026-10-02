@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEX VIRTUALIS™ | Sala de Litigación 3D Inmersiva (VR Edition)</title>
+    <!-- Framework CSS y Tipografías Institucionales -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Three.js r128 para Motor WebGL 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --bg-void: #030712;
+            --gold-primary: #d4af37;
+            --gold-gradient: linear-gradient(135deg, #fce881 0%, #d4af37 50%, #997819 100%);
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --border-glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-void);
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        .font-serif-title {
+            font-family: 'Cinzel', Georgia, serif;
+            letter-spacing: 0.05em;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ESCENARIO DE REALIDAD VIRTUAL FULL-VIEW 3D */
+        #vr-viewport-container {
+            width: 100vw;
+            height: calc(100vh - 65px);
+            position: relative;
+            background: radial-gradient(circle at 50% 30%, #151e36 0%, #030712 100%);
+            overflow: hidden;
+        }
+        #canvas3d { width: 100%; height: 100%; display: block; }
+
+        /* HUD SUPERIOR DE LA SALA JUDICIAL */
+        .vr-hud-top {
+            position: absolute;
+            top: 16px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 20;
+        }
+        .hud-badge {
+            background: rgba(10, 15, 29, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.82rem;
+            color: var(--gold-primary);
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        /* CONTROLES FLOTANTES DE CÁMARA VR */
+        .vr-camera-controls {
+            position: absolute;
+            top: 75px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+        }
+        .vr-cam-btn {
+            background: rgba(10, 15, 29, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            color: #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .vr-cam-btn:hover {
+            border-color: var(--accent-cyan);
+            color: #ffffff;
+            background: rgba(6, 182, 212, 0.15);
+            transform: translateX(-3px);
+        }
+
+        /* BOCADILLO DE DIÁLOGO EN PERSPECTIVA 3D FLOTANTE */
+        .speech-bubble-vr {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            background: rgba(10, 15, 29, 0.95);
+            backdrop-filter: blur(16px);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: #ffffff;
+            max-width: 380px;
+            min-width: 260px;
+            pointer-events: none;
+            display: none;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+            z-index: 30;
+            transition: opacity 0.2s ease;
+        }
+        .speech-bubble-vr::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: var(--accent-cyan) transparent transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* ETIQUETAS DE EMOTICONOS FLOTANTES EN 3D SOBRE CADA ACTOR */
+        .actor-reaction-tag {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 5px 12px;
+            font-size: 0.82rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+            z-index: 25;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+        .reaction-emoji {
+            font-size: 1.25rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        /* SUBTÍTULOS CINEMATOGRÁFICOS DE DIÁLOGO INFERIOR */
+        .vr-subtitle-bar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 900px;
+            background: linear-gradient(135deg, rgba(10, 15, 29, 0.92), rgba(15, 23, 42, 0.96));
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 18px;
+            padding: 16px 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            position: absolute;
+            overflow: hidden;
+        }
+        .subtitle-text {
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: #f1f5f9;
+        }
+
+        /* BARRA DE PROGRESO DE LECTURA */
+        .dialogue-reading-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            width: 0%;
+            background: linear-gradient(90deg, #38bdf8, #d4af37, #10b981);
+            transition: width 0.1s linear;
+        }
+
+        /* BOTONES DE CONTROL DE RITMO / PAUSA DE DIÁLOGOS */
+        .btn-pacing-ctrl {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .btn-pacing-ctrl:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #fff;
+        }
+
+        /* BOTÓN DE ACCIÓN / TURNO DEL USUARIO */
+        .btn-user-turn-action {
+            background: var(--gold-gradient);
+            color: #030712;
+            font-weight: 800;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            animation: pulseTurnBtn 2s infinite;
+        }
+        .btn-user-turn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 35px rgba(212, 175, 55, 0.6);
+            color: #000;
+        }
+        @keyframes pulseTurnBtn {
+            0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.7); }
+        }
+
+        /* MODAL CINEMATOGRÁFICO DE INTERVENCIÓN PROCESAL DEL USUARIO */
+        .turn-modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .turn-modal-content {
+            background: #0b1120;
+            border: 1px solid var(--gold-primary);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.15);
+            border-radius: 18px;
+            width: 92%;
+            max-width: 850px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalPop 0.25s ease-out;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .transcript-history-scroll {
+            max-height: 290px;
+            overflow-y: auto;
+            background: #060913;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .history-entry {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #38bdf8;
+        }
+
+        .quick-legal-chip {
+            background: rgba(19, 28, 51, 0.8);
+            border: 1px solid var(--border-glass);
+            color: #93c5fd;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 20px;
+            padding: 5px 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .quick-legal-chip:hover {
+            background: #1e3a8a;
+            color: #ffffff;
+            border-color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- BARRA SUPERIOR DE CABECERA INSTITUCIONAL -->
+    <header class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom border-secondary border-opacity-25" style="height: 65px; background: #060913;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-warning fs-3"><i class="bi bi-bank2"></i></div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="font-serif-title fw-bold text-white fs-5">LEX VIRTUALIS™</span>
+                    <span class="badge bg-warning text-dark font-mono fw-bold" style="font-size: 0.68rem;">VR COURTROOM</span>
+                </div>
+                <small class="text-secondary" style="font-size: 0.75rem;">Simulación Inmersiva 3D con ChromaDB Vector RAG & Agentes Dinámicos LangChain</small>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-info btn-sm px-3" onclick="toggleVoiceSpeech()" id="btnVoiceToggle">
+                <i class="bi bi-volume-up-fill me-1"></i> Audio Oral: <span id="speechStatusText">Activo</span>
+            </button>
+            <button class="btn btn-outline-light btn-sm px-3" onclick="downloadOfficialActa()">
+                <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Acta Certificada
+            </button>
+            <button class="btn btn-outline-warning btn-sm px-3" onclick="showConfigModal()">
+                <i class="bi bi-gear-fill me-1"></i> Cambiar Causa / Rol
+            </button>
+        </div>
+    </header>
+
+    <!-- ESCENARIO 3D INTERACTIVO FULL-SCREEN -->
+    <main id="vr-viewport-container">
+        <!-- HUD Superior -->
+        <div class="vr-hud-top">
+            <div class="hud-badge font-serif-title" id="hudCaseTitle">
+                <i class="bi bi-shield-shaded me-1"></i> Audiencia Previa: Manipulación de Evidencia Digital
+            </div>
+            <div class="d-flex gap-2">
+                <div class="hud-badge font-mono" id="hudTurnCount">Turno 1 / 6</div>
+                <div class="hud-badge text-info" id="hudActiveRole">Mi Rol: Perito Forense</div>
+            </div>
+        </div>
+
+        <!-- Controles de Cámara 3D -->
+        <div class="vr-camera-controls">
+            <button class="vr-cam-btn" onclick="setCameraView('general')"><i class="bi bi-grid-3x3 me-1"></i> General</button>
+            <button class="vr-cam-btn" onclick="setCameraView('judge')"><i class="bi bi-bank me-1"></i> Juez</button>
+            <button class="vr-cam-btn" onclick="setCameraView('fiscal')"><i class="bi bi-person-exclamation me-1"></i> Fiscal</button>
+            <button class="vr-cam-btn" onclick="setCameraView('defense')"><i class="bi bi-briefcase me-1"></i> Defensa</button>
+        </div>
+
+        <!-- Bocadillo de Habla 3D Flotante -->
+        <div id="speechBubble3d" class="speech-bubble-vr"></div>
+
+        <!-- Emoticonos y Reacciones Flotantes en 3D sobre los Actores -->
+        <div id="actorTagsContainer"></div>
+
+        <!-- Canvas Three.js -->
+        <canvas id="canvas3d"></canvas>
+
+        <!-- Barra Inferior de Subtítulos Cinematográficos & Acción del Usuario -->
+        <div class="vr-subtitle-bar" id="subtitleBar">
+            <div class="d-flex align-items-center gap-3 flex-grow-1">
+                <div id="speakerAvatarIcon" class="fs-2 text-warning"><i class="bi bi-megaphone-fill"></i></div>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="fw-bold small text-warning font-serif-title" id="subtitleSpeakerName">Magistrado Juez</span>
+                        <span class="badge bg-dark text-info border border-info border-opacity-30 font-mono" id="dialoguePacingTimer" style="font-size: 0.72rem; display: none;">8s</span>
+                    </div>
+                    <div class="subtitle-text" id="subtitleContent">Iniciando constitución de sala...</div>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn-pacing-ctrl" id="btnPauseDialogue" onclick="togglePauseDialogue()" title="Pausar o reanudar el avance automático">
+                    <i class="bi bi-pause-fill" id="iconPauseBtn"></i> <span id="labelPauseBtn">Pausar</span>
+                </button>
+                <button class="btn-pacing-ctrl" id="btnNextDialogue" onclick="skipToNextDialogue()" title="Avanzar de inmediato al siguiente diálogo">
+                    <i class="bi bi-skip-forward-fill"></i> Siguiente
+                </button>
+                <button class="btn-user-turn-action" id="btnOpenUserTurn" onclick="openUserTurnDialog()">
+                    <i class="bi bi-chat-dots-fill me-1"></i> Intervenir en Sala
+                </button>
+            </div>
+            <div class="dialogue-reading-progress" id="dialogueProgressBar"></div>
+        </div>
+    </main>
+
+    <!-- DIÁLOGO / MODAL DE INTERVENCIÓN PROCESAL DEL USUARIO (Se abre en tu turno) -->
+    <div class="turn-modal-backdrop" id="userTurnModalBackdrop">
+        <div class="turn-modal-content">
+            <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-black bg-opacity-40">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-warning text-dark font-mono fw-bold">TURNO ACTIVO</span>
+                    <h5 class="mb-0 text-white font-serif-title fw-bold" id="turnModalRoleHeader">Intervención: Perito Rodríguez</h5>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-light" onclick="closeUserTurnDialog()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            
+            <div class="p-4 flex-grow-1 overflow-auto">
+                <label class="form-label text-warning small fw-bold font-serif-title mb-1">
+                    <i class="bi bi-clock-history me-1"></i> Transcripción Completa del Juicio hasta este instante:
+                </label>
+                <div class="transcript-history-scroll mb-3" id="modalTranscriptHistory">
+                    <!-- Se inyecta toda la conversación acumulada -->
+                </div>
+
+                <!-- Búsqueda Vectorial RAG Integrada en el Diálogo -->
+                <div class="mb-3 p-2 bg-black bg-opacity-40 rounded border border-secondary border-opacity-30">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-info fw-bold"><i class="bi bi-search me-1"></i> Consultar Bóveda Probatoria (ChromaDB RAG):</small>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="modalRagQueryInput" class="form-control bg-dark text-light border-secondary" placeholder="Consultar evidencias (ej. hash, Tableau, UNE, custodia)...">
+                        <button class="btn btn-outline-info" onclick="performModalRAG()"><i class="bi bi-search"></i></button>
+                    </div>
+                    <div id="modalRagResults" class="small text-secondary mt-2" style="max-height: 80px; overflow-y: auto; display: none;"></div>
+                </div>
+
+                <!-- Alegatos Rápidos Didácticos -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <small class="text-secondary fw-bold align-self-center">Sugerencias:</small>
+                    <span class="quick-legal-chip" onclick="applyQuickPrompt('Ratifico que el clonado forense se realizó bit a bit con duplicadora física Tableau y hashes coincidentes.')">Ratificar Hashes SSD</span>
+                    <span class="quick-legal-chip" onclick="applyQuickPrompt('Conforme al estándar UNE 71506 y la ISO/IEC 27037, la cadena de custodia no fue vulnerada.')">Invocar UNE 71506</span>
+                    <span class="quick-legal-chip" onclick="applyQuickPrompt('Protesto formalmente su Señoría: la pregunta de la acusación es capciosa e impertinente.')">Protesta Procesal</span>
+                    <span class="quick-legal-chip" onclick="applyQuickPrompt('Solicito a su Señoría que declare la plena validez de las evidencias forenses aportadas.')">Solicitar Validez Plena</span>
+                </div>
+
+                <!-- Input del Usuario -->
+                <label class="form-label text-white small fw-bold mb-1">Tu Intervención en Sala:</label>
+                <textarea id="modalUserActionInput" class="form-control bg-dark text-light border-secondary" rows="3"
+                    placeholder="Escribe tu alegato, respuesta técnica o solicitud judicial ante la sala..."></textarea>
+            </div>
+
+            <div class="p-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center bg-black bg-opacity-40">
+                <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Al emitir, el diálogo se cerrará y la sala responderá con animación y voz en vivo.</small>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary px-3" onclick="closeUserTurnDialog()">Volver a Sala</button>
+                    <button class="btn btn-warning fw-bold text-dark px-4" onclick="submitModalUserAction()">
+                        <i class="bi bi-send-fill me-1"></i> Emitir Declaración
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURACIÓN DE CASO / ROL -->
+    <div class="modal fade" id="configScenarioModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-warning shadow-lg">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-serif-title text-warning"><i class="bi bi-briefcase me-2"></i> Selección de Causa & Personaje</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cfgActiveCaseAlert" class="alert alert-warning py-2 small mb-3" style="display: none;"></div>
+                    <label class="form-label small text-secondary fw-bold">Causa Judicial:</label>
+                    <select id="cfgScenarioSelect" class="form-select bg-black text-light border-secondary mb-3" onchange="onScenarioChanged()">
+                    </select>
+
+                    <label class="form-label small text-secondary fw-bold">Rol a Encarnar:</label>
+                    <div id="cfgRolesList" class="d-flex flex-column gap-2 mb-3"></div>
+
+                    <label class="form-label small text-secondary fw-bold">Nombre del Compareciente:</label>
+                    <input type="text" id="cfgUserNameInput" class="form-control bg-black text-light border-secondary" value="Perito Rodríguez">
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-warning fw-bold text-dark w-100" onclick="applyNewConfiguration()">
+                        <i class="bi bi-play-circle-fill me-1"></i> Iniciar Causa en Sala VR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE SENTENCIA FINAL -->
+    <div class="modal fade" id="verdictModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark text-light border-warning shadow-lg">
+                <div class="modal-header bg-warning text-dark py-2">
+                    <h5 class="modal-title font-serif-title fw-bold mb-0"><i class="bi bi-award-fill me-2"></i> Sentencia Judicial / Auto de Resolución Procesal</h5>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center my-2">
+                        <i class="bi bi-bank text-warning fs-1"></i>
+                        <h4 class="mt-2 text-white font-serif-title fw-bold">El Tribunal Ha Deliberado</h4>
+                    </div>
+                    <div class="p-3 bg-black rounded border border-warning mb-3">
+                        <div class="text-warning fw-bold small mb-1"><i class="bi bi-file-earmark-ruled me-1"></i> Fallo Emitido por el Magistrado Juez:</div>
+                        <div id="verdictContentText" class="text-light" style="line-height: 1.65;"></div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4 text-center p-2 border border-secondary rounded bg-dark">
+                            <small class="text-secondary d-block">Rigor Técnico UNE</small>
+                            <span class="badge bg-success fs-6">96.5 / 100</span>
+                        </div>
+                        <div class="col-4 text-center p-2 border border-secondary rounded bg-dark">
+                            <small class="text-secondary d-block">Coherencia Procesal</small>
+                            <span class="badge bg-info fs-6">Excelente</span>
+                        </div>
+                        <div class="col-4 text-center p-2 border border-secondary rounded bg-dark">
+                            <small class="text-secondary d-block">Cadena Custodia</small>
+                            <span class="badge bg-warning text-dark fs-6">Válida y Plena</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" onclick="downloadOfficialActa()"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Descargar Acta Oficial</button>
+                    <button type="button" class="btn btn-warning fw-bold text-dark px-4" onclick="location.reload()"><i class="bi bi-arrow-repeat me-1"></i> Nueva Audiencia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- MOTOR VR 3D THREE.JS Y LÓGICA DE JUEGO DE ROL CON REACCIONES EN VIVO -->
+    <script>
+        let currentSessionId = null;
+        let selectedRole = "estudiante_perito";
+        let activeScenario = null;
+        let scenarios = [];
+        let sessionHistory = [];
+        let isVoiceSpeechActive = true;
+
+        // Variables Three.js
+        let scene, camera, renderer;
+        let avatars3d = {};
+        let actorReactions = {};
+        let clock = new THREE.Clock();
+        const rolePositions = {
+            "juez": [0, -2.4],
+            "fiscal": [-3.8, 0],
+            "abogado_defensa": [3.8, 0],
+            "persona_juzgada": [3.8, 2.0],
+            "estudiante_perito": [0, 2.3],
+            "cliente_director": [-2.4, 0],
+            "cliente_tecnico": [2.4, 0]
+        };
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            init3DScene();
+            await loadScenarios();
+            await autoStartInitialCase();
+        });
+
+        // 1. INICIALIZACIÓN DE LA SALA VR 3D
+        function init3DScene() {
+            const container = document.getElementById("vr-viewport-container");
+            const canvas = document.getElementById("canvas3d");
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x040711);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 4.4, 12.5);
+            camera.lookAt(0, 1.4, 0);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Iluminación Teatral / Sala de Juicio Oral
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xd4af37, 1.2);
+            keyLight.position.set(6, 14, 8);
+            scene.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.8);
+            fillLight.position.set(-6, 8, 5);
+            scene.add(fillLight);
+
+            // Suelo de Tribunal con Acabado Marmóreo
+            const floorGeo = new THREE.PlaneGeometry(40, 40);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x0b1120, roughness: 0.45, metalness: 0.3 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            // Estrado Judicial de Caoba Oscura y Dorado
+            const deskGeo = new THREE.BoxGeometry(7.6, 1.35, 1.7);
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.15 });
+            const judgeDesk = new THREE.Mesh(deskGeo, deskMat);
+            judgeDesk.position.set(0, 0.67, -2.4);
+            scene.add(judgeDesk);
+
+            animate3D();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+
+        // Crear modelo procedural estilizado del actor procesal
+        function createCharacterMesh(role, colorHex, xPos, zPos, isPassive = false) {
+            const group = new THREE.Group();
+
+            // Cuerpo / Toga
+            const bodyGeo = new THREE.CylinderGeometry(0.36, 0.6, 1.45, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: isPassive ? 0x64748b : parseInt(colorHex.replace("#", "0x")), roughness: 0.35 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.0;
+            group.add(body);
+
+            // Cabeza
+            const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: isPassive ? 0x94a3b8 : 0xfbcfe8 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.0;
+            group.add(head);
+
+            // Brazos para gesticulación procedural
+            const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.62);
+            const armMat = new THREE.MeshStandardMaterial({ color: parseInt(colorHex.replace("#", "0x")) });
+            const leftArm = new THREE.Mesh(armGeo, armMat);
+            leftArm.position.set(-0.48, 1.15, 0.1);
+            group.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeo, armMat);
+            rightArm.position.set(0.48, 1.15, 0.1);
+            group.add(rightArm);
+
+            group.position.set(xPos, 0, zPos);
+            group.userData = { role: role, leftArm: leftArm, rightArm: rightArm, isSpeaking: false };
+            scene.add(group);
+            avatars3d[role] = group;
+            return group;
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            const time = clock.getElapsedTime();
+
+            for (let role in avatars3d) {
+                const av = avatars3d[role];
+                if (av.userData.isSpeaking) {
+                    av.position.y = Math.sin(time * 8) * 0.06;
+                    av.userData.leftArm.rotation.x = Math.sin(time * 6) * 0.6;
+                    av.userData.rightArm.rotation.x = -Math.sin(time * 6) * 0.6;
+                } else {
+                    av.position.y = 0;
+                    av.userData.leftArm.rotation.x = 0;
+                    av.userData.rightArm.rotation.x = 0;
+                }
+            }
+
+            updateSpeechBubblePosition();
+            updateReactionTagsPositions();
+            renderer.render(scene, camera);
+        }
+
+        let currentActiveSpeakingRole = null;
+        let activeBubbleText = "";
+
+        function updateSpeechBubblePosition() {
+            const bubble = document.getElementById("speechBubble3d");
+            if (!currentActiveSpeakingRole || !avatars3d[currentActiveSpeakingRole] || !activeBubbleText) {
+                bubble.style.display = "none";
+                return;
+            }
+
+            const av = avatars3d[currentActiveSpeakingRole];
+            const headPos = new THREE.Vector3();
+            av.getWorldPosition(headPos);
+            headPos.y += 2.45;
+
+            const screenPos = headPos.clone().project(camera);
+            const container = document.getElementById("vr-viewport-container");
+            const x = (screenPos.x * 0.5 + 0.5) * container.clientWidth;
+            const y = (-screenPos.y * 0.5 + 0.5) * container.clientHeight;
+
+            bubble.style.left = `${x}px`;
+            bubble.style.top = `${y}px`;
+            bubble.style.display = "block";
+        }
+
+        function updateReactionTagsPositions() {
+            const container = document.getElementById("vr-viewport-container");
+            for (let role in avatars3d) {
+                const tagEl = document.getElementById(`reaction_tag_${role}`);
+                if (!tagEl) continue;
+
+                const av = avatars3d[role];
+                const headPos = new THREE.Vector3();
+                av.getWorldPosition(headPos);
+                headPos.y += (role === currentActiveSpeakingRole) ? 3.1 : 2.5;
+
+                const screenPos = headPos.clone().project(camera);
+                const x = (screenPos.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (-screenPos.y * 0.5 + 0.5) * container.clientHeight;
+
+                tagEl.style.left = `${x}px`;
+                tagEl.style.top = `${y}px`;
+            }
+        }
+
+        function setSpeaker3D(role, name, textSnippet = "") {
+            currentActiveSpeakingRole = role;
+            for (let r in avatars3d) {
+                avatars3d[r].userData.isSpeaking = (r === role);
+            }
+            const bubble = document.getElementById("speechBubble3d");
+
+            if (name && textSnippet) {
+                activeBubbleText = textSnippet.length > 95 ? textSnippet.substring(0, 95) + "..." : textSnippet;
+                bubble.innerHTML = `<strong class="text-warning font-serif-title">${name}</strong><br/>${activeBubbleText}`;
+            } else {
+                activeBubbleText = "";
+                bubble.style.display = "none";
+            }
+        }
+
+        function updateCourtEmoticons(reactionsDict) {
+            if (!reactionsDict) return;
+            const container = document.getElementById("actorTagsContainer");
+
+            for (let role in reactionsDict) {
+                const data = reactionsDict[role];
+                let tagEl = document.getElementById(`reaction_tag_${role}`);
+                if (!tagEl) {
+                    tagEl = document.createElement("div");
+                    tagEl.id = `reaction_tag_${role}`;
+                    tagEl.className = "actor-reaction-tag";
+                    container.appendChild(tagEl);
+                }
+
+                tagEl.innerHTML = `
+                    <span class="reaction-emoji">${data.emoji}</span>
+                    <span>${data.status}</span>
+                `;
+            }
+        }
+
+        function setCameraView(view) {
+            if (view === 'general') {
+                camera.position.set(0, 4.4, 12.5);
+                camera.lookAt(0, 1.4, 0);
+            } else if (view === 'judge') {
+                camera.position.set(0, 2.6, 1.8);
+                camera.lookAt(0, 2, -2.4);
+            } else if (view === 'fiscal') {
+                camera.position.set(-2, 2.3, 4);
+                camera.lookAt(-3.8, 1.5, 0);
+            } else if (view === 'defense') {
+                camera.position.set(2, 2.3, 4);
+                camera.lookAt(3.8, 1.5, 0);
+            }
+        }
+
+        // 2. GESTIÓN DE ESCENARIOS Y ASIGNACIÓN DE ROLES
+        async function loadScenarios() {
+            const res = await fetch("/api/scenarios");
+            scenarios = await res.json();
+            const select = document.getElementById("cfgScenarioSelect");
+            select.innerHTML = "";
+            scenarios.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.case_id;
+                opt.textContent = `${s.scenario_type === 'audiencia' ? '🏛️ Audiencia' : '💼 Comité'}: ${s.title}`;
+                select.appendChild(opt);
+            });
+        }
+
+        async function autoStartInitialCase() {
+            const initialCaseId = scenarios[0]?.case_id || "audiencia_clonado_forense";
+            await initCaseSession(initialCaseId, selectedRole, "Perito Rodríguez");
+        }
+
+        async function initCaseSession(caseId, role, userName) {
+            const resCase = await fetch(`/api/scenarios/${caseId}`);
+            activeScenario = await resCase.json();
+
+            document.getElementById("hudCaseTitle").innerHTML = `<i class="bi bi-shield-shaded me-1"></i> ${activeScenario.title}`;
+            document.getElementById("hudActiveRole").textContent = `Mi Rol: ${role.toUpperCase()}`;
+
+            // Renderizar avatares 3D según el caso
+            for (let r in avatars3d) scene.remove(avatars3d[r]);
+            avatars3d = {};
+            document.getElementById("actorTagsContainer").innerHTML = "";
+
+            activeScenario.characters.forEach((char, idx) => {
+                const pos = rolePositions[char.role] || [(idx - 2) * 2, 0];
+                const isPassive = (char.role === "persona_juzgada");
+                createCharacterMesh(char.role, char.avatar.mesh_color, pos[0], pos[1], isPassive);
+            });
+
+            // Iniciar sesión interactiva en Backend
+            const resStart = await fetch("/api/session/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    case_id: caseId,
+                    selected_role: role,
+                    user_name: userName
+                })
+            });
+            const data = await resStart.json();
+            currentSessionId = data.session_id;
+            sessionHistory = [];
+            window.caseIsEnded = false;
+            document.getElementById("hudTurnCount").textContent = `Turno 1 / ${data.max_turns || 50}`;
+
+            // Reproducir secuencia de apertura (Juez -> Fiscal -> Defensa)
+            playDialogueSequence(data.opening_messages);
+        }
+
+        // GESTIÓN INTELIGENTE DEL RITMO DE DIÁLOGOS Y CONTROLES DE LECTURA
+        let dialogueQueue = [];
+        let currentDialogueIndex = -1;
+        let dialogueTimer = null;
+        let progressInterval = null;
+        let isDialoguePaused = false;
+        let dialogueDurationRemaining = 0;
+        let dialogueTotalDuration = 0;
+        let dialogueStartTime = 0;
+
+        function playDialogueSequence(messages) {
+            if (!messages || messages.length === 0) return;
+            dialogueQueue = messages;
+            currentDialogueIndex = -1;
+            isDialoguePaused = false;
+            updatePauseButtonUI();
+            advanceToNextDialogueInQueue();
+        }
+
+        function advanceToNextDialogueInQueue() {
+            clearPacingTimers();
+            currentDialogueIndex++;
+
+            if (currentDialogueIndex >= dialogueQueue.length) {
+                // Fin de la secuencia de réplicas
+                onDialogueSequenceFinished();
+                return;
+            }
+
+            const m = dialogueQueue[currentDialogueIndex];
+            sessionHistory.push(m);
+            setSpeaker3D(m.speaker_role, m.speaker_name, m.content);
+            updateCourtEmoticons(m.court_reactions);
+            displaySubtitle(m.speaker_name, m.content);
+            speakDialogue(m.speaker_role, m.content);
+
+            // Enfocar cámara al orador para mayor inmersión VR
+            if (m.speaker_role === "juez") setCameraView("judge");
+            else if (m.speaker_role === "fiscal") setCameraView("fiscal");
+            else if (m.speaker_role === "abogado_defensa") setCameraView("defense");
+
+            // Cálculo dinámico del tiempo de lectura:
+            // ~65ms por carácter con un mínimo de 7.5s y máximo de 14s para lectura holgada y cómoda
+            const charCount = (m.content || "").length;
+            dialogueTotalDuration = Math.max(7500, Math.min(14000, charCount * 65));
+            dialogueDurationRemaining = dialogueTotalDuration;
+            dialogueStartTime = Date.now();
+
+            startDialoguePacingCountdown(dialogueTotalDuration);
+        }
+
+        function startDialoguePacingCountdown(durationMs) {
+            clearPacingTimers();
+            const timerBadge = document.getElementById("dialoguePacingTimer");
+            const progressBar = document.getElementById("dialogueProgressBar");
+            
+            if (timerBadge) {
+                timerBadge.style.display = "inline-block";
+                timerBadge.textContent = `${Math.ceil(durationMs / 1000)}s`;
+            }
+            if (progressBar) progressBar.style.width = "0%";
+
+            dialogueStartTime = Date.now();
+            dialogueDurationRemaining = durationMs;
+
+            progressInterval = setInterval(() => {
+                if (isDialoguePaused) return;
+
+                const elapsed = Date.now() - dialogueStartTime;
+                const remaining = Math.max(0, dialogueTotalDuration - elapsed);
+                dialogueDurationRemaining = remaining;
+
+                const pct = Math.min(100, (elapsed / dialogueTotalDuration) * 100);
+                if (progressBar) progressBar.style.width = `${pct}%`;
+                if (timerBadge) timerBadge.textContent = `${Math.ceil(remaining / 1000)}s`;
+
+                if (remaining <= 0) {
+                    clearPacingTimers();
+                    advanceToNextDialogueInQueue();
+                }
+            }, 100);
+        }
+
+        function togglePauseDialogue() {
+            isDialoguePaused = !isDialoguePaused;
+            updatePauseButtonUI();
+
+            const timerBadge = document.getElementById("dialoguePacingTimer");
+            if (isDialoguePaused) {
+                if (timerBadge) timerBadge.textContent = "⏸️ Pausado";
+            } else {
+                // Reanudar con el tiempo restante
+                dialogueStartTime = Date.now() - (dialogueTotalDuration - dialogueDurationRemaining);
+            }
+        }
+
+        function updatePauseButtonUI() {
+            const icon = document.getElementById("iconPauseBtn");
+            const label = document.getElementById("labelPauseBtn");
+            const btn = document.getElementById("btnPauseDialogue");
+            if (!icon || !label || !btn) return;
+
+            if (isDialoguePaused) {
+                icon.className = "bi bi-play-fill";
+                label.textContent = "Continuar";
+                btn.classList.add("border-warning", "text-warning");
+            } else {
+                icon.className = "bi bi-pause-fill";
+                label.textContent = "Pausar";
+                btn.classList.remove("border-warning", "text-warning");
+            }
+        }
+
+        function skipToNextDialogue() {
+            clearPacingTimers();
+            isDialoguePaused = false;
+            updatePauseButtonUI();
+            advanceToNextDialogueInQueue();
+        }
+
+        function clearPacingTimers() {
+            if (progressInterval) clearInterval(progressInterval);
+            if (dialogueTimer) clearTimeout(dialogueTimer);
+            progressInterval = null;
+            dialogueTimer = null;
+        }
+
+        function onDialogueSequenceFinished() {
+            clearPacingTimers();
+            const timerBadge = document.getElementById("dialoguePacingTimer");
+            const progressBar = document.getElementById("dialogueProgressBar");
+            if (timerBadge) timerBadge.style.display = "none";
+            if (progressBar) progressBar.style.width = "0%";
+
+            setCameraView("general");
+            document.getElementById("btnOpenUserTurn").style.display = "inline-block";
+
+            // Si la causa ha concluido con veredicto final, desplegar modal
+            if (window.pendingVerdictModalData) {
+                const verdictMsg = window.pendingVerdictModalData;
+                window.pendingVerdictModalData = null;
+                window.caseIsEnded = true;
+                setTimeout(() => {
+                    document.getElementById("verdictContentText").innerHTML = verdictMsg ? verdictMsg.content : "El tribunal ha pronunciado su sentencia definitiva.";
+                    const modal = new bootstrap.Modal(document.getElementById('verdictModal'));
+                    modal.show();
+                }, 1200);
+            }
+        }
+
+        function displaySubtitle(speaker, text) {
+            document.getElementById("subtitleSpeakerName").textContent = speaker;
+            document.getElementById("subtitleContent").textContent = text;
+        }
+
+        // 3. DIÁLOGO / MODAL INTERACTIVO DE TURNO DEL USUARIO
+        function openUserTurnDialog() {
+            const backdrop = document.getElementById("userTurnModalBackdrop");
+            const historyContainer = document.getElementById("modalTranscriptHistory");
+            document.getElementById("turnModalRoleHeader").textContent = `Intervención: ${selectedRole.toUpperCase()} (Tú)`;
+
+            // Renderizar toda la transcripción acumulada
+            historyContainer.innerHTML = sessionHistory.map(m => `
+                <div class="history-entry" style="border-left-color: ${m.speaker_role === selectedRole ? '#10b981' : '#38bdf8'};">
+                    <strong>${m.speaker_name}:</strong> ${m.content}
+                    ${m.internal_thought ? `<div style="font-size: 0.78rem; color: #94a3b8; font-style: italic; margin-top: 3px;">&bull; Deducción: "${m.internal_thought}"</div>` : ''}
+                </div>
+            `).join('');
+
+            backdrop.style.display = "flex";
+            document.getElementById("modalUserActionInput").focus();
+        }
+
+        function closeUserTurnDialog() {
+            document.getElementById("userTurnModalBackdrop").style.display = "none";
+        }
+
+        function applyQuickPrompt(text) {
+            document.getElementById("modalUserActionInput").value = text;
+            document.getElementById("modalUserActionInput").focus();
+        }
+
+        async function submitModalUserAction() {
+            const input = document.getElementById("modalUserActionInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            closeUserTurnDialog();
+            input.value = "";
+
+            const userMsg = {
+                speaker_name: "Tú",
+                speaker_role: selectedRole,
+                content: text,
+                is_user: true
+            };
+            sessionHistory.push(userMsg);
+            setSpeaker3D(selectedRole, "Tú", text);
+            displaySubtitle(`Tú (${selectedRole.toUpperCase()})`, text);
+
+            const res = await fetch(`/api/session/${currentSessionId}/action`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_text: text })
+            });
+            const data = await res.json();
+            document.getElementById("hudTurnCount").textContent = `Turno ${data.current_turn} / ${data.max_turns}`;
+
+            // Reacciones de los demás actores ante lo que acaba de decir el usuario
+            if (data.user_message && data.user_message.court_reactions) {
+                updateCourtEmoticons(data.user_message.court_reactions);
+            }
+
+            // Si la causa concluyó, programar el veredicto para cuando terminen de reproducirse los diálogos
+            if (data.is_completed) {
+                const verdictMsg = data.responses.find(r => r.speaker_name.includes("VEREDICTO FINAL")) || data.responses[data.responses.length - 1];
+                window.pendingVerdictModalData = verdictMsg;
+            }
+
+            // Reproducir réplicas generadas dinámicamente por la IA con ritmo de lectura inteligente
+            playDialogueSequence(data.responses);
+        }
+
+        // Búsqueda RAG en el Modal de Intervención
+        async function performModalRAG() {
+            const query = document.getElementById("modalRagQueryInput").value.trim();
+            if (!query) return;
+
+            const res = await fetch(`/api/rag/search?case_id=${activeScenario.case_id}&query=${encodeURIComponent(query)}&role=${selectedRole}`);
+            const data = await res.json();
+            const resultsBox = document.getElementById("modalRagResults");
+            resultsBox.style.display = "block";
+
+            if (data.results && data.results.length > 0) {
+                resultsBox.innerHTML = data.results.map(d => `
+                    <div class="p-1 mb-1 border-bottom border-secondary">
+                        <strong>${d.title}:</strong> ${d.content.substring(0, 110)}...
+                    </div>
+                `).join('');
+            } else {
+                resultsBox.innerHTML = '<span class="text-warning">Sin coincidencias vectoriales en ChromaDB.</span>';
+            }
+        }
+
+        // 4. SÍNTESIS DE VOZ Y EXPORTACIÓN NOTARIAL
+        function toggleVoiceSpeech() {
+            isVoiceSpeechActive = !isVoiceSpeechActive;
+            document.getElementById("speechStatusText").textContent = isVoiceSpeechActive ? "Activo" : "Silenciado";
+            if (!isVoiceSpeechActive && ('speechSynthesis' in window)) window.speechSynthesis.cancel();
+        }
+
+        function speakDialogue(role, text) {
+            if (!isVoiceSpeechActive || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+
+            const cleanText = text.replace(/\[.*?\]/g, '').replace(/https?:\/\/\S+/g, '').trim();
+            if (!cleanText) return;
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = "es-ES";
+            if (role === "juez") { utterance.pitch = 0.85; utterance.rate = 0.95; }
+            else if (role === "fiscal") { utterance.pitch = 1.05; utterance.rate = 1.05; }
+            else if (role === "abogado_defensa") { utterance.pitch = 0.95; utterance.rate = 1.0; }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        async function downloadOfficialActa() {
+            if (!currentSessionId) return;
+            const res = await fetch(`/api/session/${currentSessionId}/transcript`);
+            const data = await res.json();
+
+            const printWindow = window.open('', '_blank');
+            const dateStr = new Date().toLocaleString("es-ES");
+            
+            const transcriptRows = data.history.map((m, idx) => `
+                <div style="margin-bottom: 12px; padding: 10px; border-left: 4px solid #1e3a8a; background: #f8fafc; font-family: sans-serif;">
+                    <div style="font-weight: bold; font-size: 13px; color: #1e293b;">
+                        [${idx + 1}] ${m.speaker_name} (${m.speaker_role.toUpperCase()}) &mdash; <span style="color: #64748b; font-weight: normal;">${m.emotion_tag || ''}</span>
+                    </div>
+                    <div style="margin-top: 4px; font-size: 14px; color: #334155; line-height: 1.5;">${m.content}</div>
+                </div>
+            `).join('');
+
+            printWindow.document.write(`
+                <!DOCTYPE html><html><head><title>Acta Judicial Oficial - ${data.case_title}</title>
+                <style>body { font-family: 'Georgia', serif; padding: 40px; color: #0f172a; line-height: 1.6; }
+                .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
+                .title { font-size: 22px; font-weight: bold; text-transform: uppercase; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                td { padding: 6px 10px; border: 1px solid #cbd5e1; font-size: 14px; }
+                </style></head><body>
+                <div class="header">
+                    <div style="font-size: 11px; text-transform: uppercase; color: #64748b;">Administración de Justicia &bull; Sala de Juicio Oral Digital</div>
+                    <div class="title">Acta Oficial de Declaración Procesal</div>
+                    <div style="font-size: 13px;">Plataforma Oficial LEX VIRTUALIS&trade; &bull; ${dateStr}</div>
+                </div>
+                <table>
+                    <tr><td><strong>Causa:</strong></td><td>${data.case_title}</td></tr>
+                    <tr><td><strong>Compareciente:</strong></td><td>${data.user_name} (${data.user_role})</td></tr>
+                    <tr><td><strong>Rigor Técnico:</strong></td><td>${data.evaluation_metrics.technical_rigor_score} / 100</td></tr>
+                </table>
+                <h3>Transcripción de Actuaciones en Sala:</h3>
+                ${transcriptRows}
+                </body></html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 400);
+        }
+
+        // Modal de Configuración & Bloqueo de Rol durante el Caso Activo
+        function showConfigModal() {
+            // Si la causa está activa y en curso (con turnos ya jugados y no terminada), el rol queda fijado
+            const currentTurnNum = parseInt(document.getElementById("hudTurnCount").textContent.replace(/\D+/g, " ")?.trim()?.split(" ")?.[0] || "0");
+            const modal = new bootstrap.Modal(document.getElementById('configScenarioModal'));
+            onScenarioChanged();
+            
+            const btnApply = document.querySelector("#configScenarioModal .modal-footer button");
+            const alertBox = document.getElementById("cfgActiveCaseAlert");
+            if (currentSessionId && currentTurnNum > 0 && !window.caseIsEnded) {
+                if (alertBox) {
+                    alertBox.style.display = "block";
+                    alertBox.innerHTML = `<i class="bi bi-lock-fill me-1"></i> <strong>Audiencia en curso:</strong> Para salvaguardar la coherencia procesal, el rol <code>${selectedRole.toUpperCase()}</code> está fijado. Podrás elegir un nuevo rol al concluir la causa o al reiniciar una nueva audiencia.`;
+                }
+                // Deshabilitar cambio de rol mid-case
+                document.querySelectorAll("input[name='cfgRoleRadio']").forEach(r => r.disabled = true);
+            } else {
+                if (alertBox) alertBox.style.display = "none";
+                document.querySelectorAll("input[name='cfgRoleRadio']").forEach(r => r.disabled = false);
+            }
+
+            modal.show();
+        }
+
+        function onScenarioChanged() {
+            const caseId = document.getElementById("cfgScenarioSelect").value;
+            const caseObj = scenarios.find(s => s.case_id === caseId);
+            if (!caseObj) return;
+
+            const list = document.getElementById("cfgRolesList");
+            list.innerHTML = caseObj.characters.filter(c => c.role !== 'persona_juzgada').map(c => `
+                <div class="p-2 border border-secondary rounded d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="selectConfigRole('${c.role}', this)">
+                    <div><strong>${c.name}</strong> <span class="badge bg-secondary">${c.role}</span></div>
+                    <input type="radio" name="cfgRoleRadio" value="${c.role}" ${c.role === selectedRole ? 'checked' : ''}>
+                </div>
+            `).join('');
+        }
+
+        function selectConfigRole(role, elem) {
+            const radio = elem.querySelector('input');
+            if (radio && radio.disabled) return;
+            selectedRole = role;
+            radio.checked = true;
+        }
+
+        async function applyNewConfiguration() {
+            const caseId = document.getElementById("cfgScenarioSelect").value;
+            const userName = document.getElementById("cfgUserNameInput").value.trim() || "Letrado";
+            const modal = bootstrap.Modal.getInstance(document.getElementById('configScenarioModal'));
+            if (modal) modal.hide();
+            window.caseIsEnded = false;
+            await initCaseSession(caseId, selectedRole, userName);
+        }
+    </script>
+</body>
+</html>

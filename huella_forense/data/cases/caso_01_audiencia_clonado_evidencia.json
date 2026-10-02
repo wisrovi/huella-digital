@@ -1,0 +1,143 @@
+{
+  "case_id": "caso_01_audiencia_clonado_evidencia",
+  "title": "Audiencia Previa: Manipulación de Evidencia Digital en Fraude Financiero",
+  "description": "Vista oral donde el estudiante actúa como perito forense defendiendo la autenticidad del volcado forense y la cadena de custodia de un disco SSD incautado.",
+  "scenario_type": "audiencia",
+  "difficulty": "intermedio",
+  "characters": [
+    {
+      "id": "10cbca7f-33ba-4f4d-aaac-5abc879dcbdd",
+      "name": "Magistrado D. Antonio Morales",
+      "role": "juez",
+      "personality": "Institucional, riguroso con el procedimiento judicial, exige orden y respuestas inequívocas.",
+      "objectives": [
+        "Garantizar la pulcritud procesal",
+        "Aclarar si la prueba digital puede admitirse sin vulnerar derechos fundamentales"
+      ],
+      "knowledge_access": [
+        "general",
+        "judicial",
+        "ley"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    },
+    {
+      "id": "0223b966-71ba-4ae5-8686-b5c0b7f1d7d4",
+      "name": "Fiscal Dña. Carmen Serrano",
+      "role": "fiscal",
+      "personality": "Incisiva, metódica, busca afianzar la acusación a través del rigor del informe pericial.",
+      "objectives": [
+        "Demostrar que el acusado alteró las transferencias bancarias",
+        "Comprobar que el hash SHA-256 no varió"
+      ],
+      "knowledge_access": [
+        "general",
+        "informe_pericial",
+        "evidencia_forense"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    },
+    {
+      "id": "8357afe3-050c-4fe0-b120-ef7e1098690f",
+      "name": "Letrado D. Jorge Valenzuela",
+      "role": "abogado_defensa",
+      "personality": "Escéptico, agresivo en la repregunta, busca cualquier fallo en la cadena de custodia para anular la prueba.",
+      "objectives": [
+        "Sembrar duda sobre la custodia del disco",
+        "Alegar posible contaminación por software espía"
+      ],
+      "knowledge_access": [
+        "general",
+        "informe_pericial"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    },
+    {
+      "id": "95bc4d5c-f186-4626-a996-893e284ccaf1",
+      "name": "Acusado D. Roberto Medina",
+      "role": "persona_juzgada",
+      "personality": "Silencioso, cabizbajo.",
+      "objectives": [
+        "Permanecer a la espera de la resolución judicial"
+      ],
+      "knowledge_access": [],
+      "is_active_speaker": false,
+      "system_prompt": null,
+      "avatar_type": "monigote_gris"
+    }
+  ],
+  "knowledge_base": [
+    {
+      "id": "4c1c6cde-2a82-41dd-ab3d-5d9297db1d65",
+      "title": "Acta Notarial de Cadena de Custodia SSD-981",
+      "category": "cadena_custodia",
+      "content": "El disco SSD Samsung EVO 1TB fue clonado bit a bit el día 12/03 con duplicadora Tableau Forensic TD2u. Hash SHA-256 origen: a7f8c9b2... Hash imagen E01: a7f8c9b2... Coincidencia 100%.",
+      "tags": [
+        "general",
+        "evidencia_forense",
+        "informe_pericial"
+      ],
+      "created_at": "2026-10-02T16:03:28.122714"
+    },
+    {
+      "id": "6cfec71d-d3ac-47bb-bac2-f73001829919",
+      "title": "Normativa UNE 71506:2013 Metodologías de Análisis Forense",
+      "category": "ley_procesal",
+      "content": "Establece los requisitos para la adquisición, preservación y documentación de evidencias electrónicas garantizando la no alterabilidad.",
+      "tags": [
+        "general",
+        "ley",
+        "judicial"
+      ],
+      "created_at": "2026-10-02T16:03:28.122731"
+    }
+  ],
+  "evaluation_criteria": [
+    {
+      "id": "ind_01",
+      "name": "Garantía de Cadena de Custodia y Hashes",
+      "category": "rigor_tecnico",
+      "description": "Menciona y justifica el cotejo de hashes criptográficos (SHA-256/MD5) y uso de bloqueadores de escritura.",
+      "weight": 1.0,
+      "expected_keywords": [
+        "hash",
+        "sha-256",
+        "bloqueador",
+        "integridad",
+        "clonación"
+      ],
+      "penalized_keywords": [
+        "no sé",
+        "no comprobé",
+        "se me olvidó"
+      ]
+    },
+    {
+      "id": "ind_02",
+      "name": "Solvencia y Compostura Judicial",
+      "category": "comunicacion_judicial",
+      "description": "Tratamiento formal a Su Señoría y respuestas firmes sin caer en especulaciones no demostradas.",
+      "weight": 1.0,
+      "expected_keywords": [
+        "señoría",
+        "informe",
+        "evidencia",
+        "análisis",
+        "metodología"
+      ],
+      "penalized_keywords": [
+        "creo que",
+        "supongo",
+        "tal vez"
+      ]
+    }
+  ],
+  "max_turns": 6,
+  "case_context": {}
+}

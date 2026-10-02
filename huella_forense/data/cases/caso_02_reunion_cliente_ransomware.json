@@ -1,0 +1,80 @@
+{
+  "case_id": "caso_02_reunion_cliente_ransomware",
+  "title": "Comité de Crisis: Presentación de Conclusiones de Incidente Ransomware",
+  "description": "Reunión técnica y ejecutiva donde el perito debe explicar al Director General y al CISO cómo se produjo la intrusión y si hubo fuga de datos personales (RGPD).",
+  "scenario_type": "reunion_cliente",
+  "difficulty": "avanzado",
+  "characters": [
+    {
+      "id": "ea2c450e-3cbe-46cd-999e-f4c6a40121ad",
+      "name": "D. Fernando Ortiz (CEO)",
+      "role": "cliente_director",
+      "personality": "Pragmático, preocupado por la continuidad de negocio, impacto económico y sanciones legales.",
+      "objectives": [
+        "Conocer el impacto de la brecha",
+        "Decidir si notificar a la Agencia de Protección de Datos"
+      ],
+      "knowledge_access": [
+        "general",
+        "ejecutivo"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    },
+    {
+      "id": "6e70bfb7-f86f-496b-a095-2a167f5a8745",
+      "name": "Dña. Elena Ramos (CISO)",
+      "role": "cliente_tecnico",
+      "personality": "Técnica, detallista, busca conocer el vector inicial de ataque (PoC) y medidas de contención.",
+      "objectives": [
+        "Entender el vector de entrada (phishing/RDP)",
+        "Validar el aislamiento de la DMZ"
+      ],
+      "knowledge_access": [
+        "general",
+        "tecnico",
+        "logs"
+      ],
+      "is_active_speaker": true,
+      "system_prompt": null,
+      "avatar_type": "standard"
+    }
+  ],
+  "knowledge_base": [
+    {
+      "id": "2ba90cff-178f-40fb-a592-98ad9990aa75",
+      "title": "Informe de Triaje de Logs de Active Directory y Firewall",
+      "category": "informe_pericial",
+      "content": "Se detectó tráfico anómalo vía puerto 3389 (RDP) desde una IP de Tor hacia el servidor de ficheros principal a las 02:14 AM. No hubo exfiltración masiva demostrable gracias al bloqueo perimetral a las 03:00 AM.",
+      "tags": [
+        "general",
+        "tecnico",
+        "logs"
+      ],
+      "created_at": "2026-10-02T16:03:28.122995"
+    }
+  ],
+  "evaluation_criteria": [
+    {
+      "id": "ind_reunion_01",
+      "name": "Claridad Ejecutiva y Comunicación No Técnica",
+      "category": "comunicacion_ejecutiva",
+      "description": "Capacidad para traducir hallazgos técnicos complejos a impacto de negocio para la dirección.",
+      "weight": 1.0,
+      "expected_keywords": [
+        "impacto",
+        "notificación",
+        "riesgo",
+        "contención",
+        "aepd"
+      ],
+      "penalized_keywords": [
+        "no entiendo",
+        "imposible saber"
+      ]
+    }
+  ],
+  "max_turns": 5,
+  "case_context": {}
+}
